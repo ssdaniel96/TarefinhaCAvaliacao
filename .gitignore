@@ -117,8 +117,8 @@ $RECYCLE.BIN/
 *.lnk
 
 #Others
-tasks.json
-launch.json
 Makefile
 
 # End of https://www.toptal.com/developers/gitignore/api/cmake,visualstudiocode,git,windows,c++,executable
+*.json
+*.json
