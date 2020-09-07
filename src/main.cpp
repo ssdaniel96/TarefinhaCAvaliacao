@@ -1,44 +1,52 @@
 #include <iostream>
-#include <string>
-#include <stdio.h>
 #include <string.h>
+#include <stdio.h>
 
-using namespace std;
+#define localizacaoPerguntas "perguntas.txt"
+#define localizacaoRespostas "gabarito.txt"
 
-struct perg
+struct Perguntas
 {
     char pergunta[255];
-    char respostas[3][255];
-    int respostaCerta;
+    char respostas[5][255];
+    char respostaCerta[3];
+};
+
+enum tabela
+{
+    coluna_id = 0,
+    coluna_pergunta = 1,
+    coluna_alternativa = 2
 };
 
 #pragma region Leitura
 
-void sair(int i){
+void sair(int i)
+{
     system("pause");
     exit(i);
 }
 
-
-int lerPerguntas(perg perguntas[], char localizacao[])
+int lerPerguntas(Perguntas *perguntas)
 {
-    FILE *arquivoPerguntas = fopen(localizacao, "r");
     char secao[255];
+    FILE *arquivoPerguntas = fopen(localizacaoPerguntas, "r");
 
-    for (int linha = 0, naLinha = 0; fscanf(arquivoPerguntas, "%[^;]%*c", secao) != EOF; naLinha++)
+    for (int linha = 0, coluna = 0; fscanf(arquivoPerguntas, "%[^;]%*c", secao) != EOF; coluna++)
     {
-        if (naLinha > 4)
+        if (secao[0] == 10) // "\n" igual a 10 tabela ascii
         {
-            naLinha = 0;
+            coluna = 0;
             linha++;
         }
-        else if (naLinha == 1)
+
+        if (coluna == coluna_pergunta)
         {
             strcpy(perguntas[linha].pergunta, secao);
         }
-        else if (naLinha > 1)
+        else if (coluna >= coluna_alternativa)
         {
-            strcpy(perguntas[linha].respostas[naLinha - 2], secao);
+            strcpy(perguntas[linha].respostas[coluna - 2], secao);
         }
     }
 
@@ -46,14 +54,15 @@ int lerPerguntas(perg perguntas[], char localizacao[])
     return 0;
 }
 
-int lerRespostas(perg perguntas[], char localizacao[])
+int lerRespostas(Perguntas *perguntas)
 {
-    FILE *arquivoRespostas = fopen(localizacao, "r");
-    int secao;
+    FILE *arquivoRespostas = fopen(localizacaoRespostas, "r");
+    int numero;
+    char resposta[3];
 
-    for (int linha = 0; fscanf(arquivoRespostas, "%d", &secao) != EOF; linha++)
+    while (fscanf(arquivoRespostas, "%d-%s", &numero, resposta) != EOF)
     {
-        perguntas[linha].respostaCerta = secao;
+        strcpy(perguntas[numero - 1].respostaCerta, resposta);
     }
 
     fclose(arquivoRespostas);
@@ -86,15 +95,17 @@ int pegarTotalPerguntas(char localizacao1[], char localizacao2[])
 
     return linhas[0];
 }
-void carregarArquivos(perg *perguntas, char localizacao1[], char localizacao2[])
+
+void carregarArquivos(Perguntas *perguntas)
 {
     printf("\nCarregando arquivos... por favor aguarde!");
-    if (lerPerguntas(perguntas, localizacao1) == 1)
+
+    if (lerPerguntas(perguntas) == 1)
     {
         printf("\nErro na leitura do(s) arquivo(s)");
         sair(1);
     }
-    if (lerRespostas(perguntas, localizacao2) == 1)
+    if (lerRespostas(perguntas) == 1)
     {
         printf("\nErro na leitura do(s) arquivo(s)");
         sair(1);
@@ -102,59 +113,82 @@ void carregarArquivos(perg *perguntas, char localizacao1[], char localizacao2[])
     printf(" Concluido com sucesso!");
 }
 
-void verificarExistencia(char localizacao1[], char localizacao2[]){
+void verificarExistencia()
+{
     printf("\nProcurando arquivos... ");
     char *localizacao[2];
-    localizacao[0] = localizacao1;
-    localizacao[1] = localizacao2;
-    for (int i = 0; i < 2; i++){
+    localizacao[0] = localizacaoPerguntas;
+    localizacao[1] = localizacaoRespostas;
+    for (int i = 0; i < 2; i++)
+    {
         FILE *file = fopen(localizacao[i], "r");
-        if (file == NULL){
-            printf("\nArquivo nao existe! %s", localizacao[i]);
+        if (file == NULL)
+        {
+            printf("\n\nErro ao abrir o arquivo: %s", localizacao[i]);
+            perror(strcat("\nErro no arquivo ", strcat(localizacao[i], "'")));
             sair(1);
         }
         fclose(file);
     }
     printf(" Encontrados!");
-
 }
 
 #pragma endregion Leitura
 
 #pragma region ExecutarPerguntas
-int executarPerguntas(struct perg *perguntas, int total)
+int executarPerguntas(struct Perguntas *perguntas, int total)
 {
     int acertos = 0;
+    system("cls");
+
     for (int atual = 1; atual <= total; atual++)
     {
-        printf("\nPergunta n. %d:\n", atual);
+        printf("\nPergunta n. %d: ", atual);
         int atualP = atual - 1;
 
-        printf("\n%s", perguntas[atualP]);
-        for (int i = 0; i < 3; i++)
+        printf("\n%s", perguntas[atualP].pergunta);
+        int i = 0;
+        for (char abcde = 'a'; abcde <= 'e'; ++abcde)
         {
-            printf("\n\tAlternativa %d: %s", i + 1, perguntas[atualP].respostas[i]);
+            if (strcmp(perguntas[atualP].respostas[i], "") != 0)
+            {
+                printf("\n\t%c) %s", toupper(abcde), perguntas[atualP].respostas[i]);
+            }
+            i++;
         }
-        int resposta = -999;
-        while (resposta < 1 || resposta > 3)
+
+        bool respostaValida = false;
+
+        char resposta[3];
+        while (respostaValida == false)
         {
-            if (resposta != -999)
+            printf("\nSua resposta: ");
+            scanf("%s", resposta);
+
+            *resposta = toupper(*resposta);
+
+            if ((strcmp(resposta, "A") != 0) &&
+                (strcmp(resposta, "B") != 0) &&
+                (strcmp(resposta, "C") != 0) &&
+                (strcmp(resposta, "D") != 0) &&
+                (strcmp(resposta, "E") != 0))
             {
                 printf("\nERRO! Alternativa invalida");
             }
-            printf("\nSua resposta: ");
-            cin >> resposta;
+            else
+            {
+                respostaValida = true;
+            }
         }
 
-        int respostaCerta = perguntas[atualP].respostaCerta;
-        if (resposta == respostaCerta)
+        if (strcmp(resposta, perguntas[atualP].respostaCerta) == 0)
         {
-            printf("\nParabens! Voce acertou!");
+            printf("\nParabens! Voce acertou!\n");
             acertos++;
         }
         else
         {
-            printf("\nQue pena! Voce errou... a resposta certa era a alternativa %d", perguntas[atual].respostaCerta);
+            printf("\nQue pena! Voce errou... a resposta certa era a alternativa %s\n", perguntas[atualP].respostaCerta);
         }
     }
 
@@ -167,19 +201,17 @@ void imprimirResultado(int totalPerguntas, int acertos)
     printf("\nTotal de perguntas: %d", totalPerguntas);
     printf("\nTotal de acertos: %d", acertos);
     printf("\nTotal de erros: %d", totalPerguntas - acertos);
-    printf("\nVoce acertou %.2f%%", (float(acertos) / float(totalPerguntas)) * 100);
+    printf("\nVoce acertou %.2f%%\n\n", (float(acertos) / float(totalPerguntas)) * 100);
 }
 #pragma endregion ExecutarPerguntas
 
-
 int main(void)
 {
-    char localizacaoPerguntas[] = "src/perguntas.txt";
-    char localizacaoRespostas[] = "src/gabarito.txt";
-    verificarExistencia(localizacaoPerguntas, localizacaoRespostas);    
+    verificarExistencia();
     int totalPerguntas = pegarTotalPerguntas(localizacaoPerguntas, localizacaoRespostas);
-    perg perguntas[totalPerguntas];
-    carregarArquivos(perguntas, localizacaoPerguntas, localizacaoRespostas);
+    Perguntas *perguntas = (Perguntas *)malloc(sizeof(Perguntas) * totalPerguntas);
+    
+    carregarArquivos(perguntas);
     int acertos = executarPerguntas(perguntas, totalPerguntas);
     imprimirResultado(totalPerguntas, acertos);
     system("pause");

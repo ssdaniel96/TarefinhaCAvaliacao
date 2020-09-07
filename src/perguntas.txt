@@ -7,4 +7,4 @@
 7;Quando foi criada a ultima constituicao nacional?;1988;1983;1998;
 8;Quando Jesus nasceu?;Cerca de 4AC;Ano 0;Ano 1 DC;
 9;Quantos livros existem na biblia?;66;57;86;
-10;Quanto eh metade do dobro de cinco? 5; 2,5; 10;
+10;Quanto eh metade do dobro de cinco?; 5; 2,5; 10;
