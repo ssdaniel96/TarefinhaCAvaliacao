@@ -19,11 +19,21 @@ enum tabela
     coluna_alternativa = 2
 };
 
+void clear() {
+#if defined _WIN32
+    system("cls");
+#elif defined (__LINUX__) || defined(__gnu_linux__) || defined(__linux__)
+    system("clear");
+#elif defined (__APPLE__)
+    system("clear");
+#endif
+}
+
 #pragma region Leitura
 
 void sair(int i)
 {
-    system("pause");
+    std::cin.get();
     exit(i);
 }
 
@@ -139,7 +149,7 @@ void verificarExistencia()
 int executarPerguntas(struct Perguntas *perguntas, int total)
 {
     int acertos = 0;
-    system("cls");
+    clear();
 
     for (int atual = 1; atual <= total; atual++)
     {
@@ -214,6 +224,6 @@ int main(void)
     carregarArquivos(perguntas);
     int acertos = executarPerguntas(perguntas, totalPerguntas);
     imprimirResultado(totalPerguntas, acertos);
-    system("pause");
+    std::cin.get();
     return 0;
 }
