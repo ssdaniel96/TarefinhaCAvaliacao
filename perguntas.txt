@@ -8,5 +8,5 @@
 8;2;Quando Jesus nasceu?;Cerca de 4AC;Ano 0;Ano 1 DC;
 9;3;Quantos livros existem na biblia?;66;57;86;
 10;3;Quanto eh metade do dobro de cinco?; 5; 2,5; 10;
-11;3;Qual eh a capital da Australia?;Sidnei;Brasilia;Camberra;
-12;3;Que ano morreu Ellen White?;2005;2003;1915;
+11;3;Qual eh a capital da Australia?Sidnei;Brasilia;Camberra;
+12;3;Que ano morreu Ellen White?2005;2003;1915;

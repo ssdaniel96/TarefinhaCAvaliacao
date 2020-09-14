@@ -2,21 +2,28 @@
 #include <string.h>
 #include <stdio.h>
 
-#define localizacaoPerguntas "perguntas.txt"
-#define localizacaoRespostas "gabarito.txt"
+
+
+// Facil = '1',
+// Medio = '2',
+// Dificil = '3'
+// Todos = '0'
+
 
 struct Perguntas
 {
     char pergunta[255];
     char respostas[5][255];
     char respostaCerta[3];
+    char nivel;
 };
 
 enum tabela
 {
     coluna_id = 0,
-    coluna_pergunta = 1,
-    coluna_alternativa = 2
+    coluna_dificuldade = 1,
+    coluna_pergunta = 2,
+    coluna_alternativa = 3
 };
 
 #pragma region Leitura
@@ -27,7 +34,7 @@ void sair(int i)
     exit(i);
 }
 
-int lerPerguntas(Perguntas *perguntas)
+int lerPerguntas(Perguntas *perguntas, char localizacaoPerguntas[255])
 {
     char secao[255];
     FILE *arquivoPerguntas = fopen(localizacaoPerguntas, "r");
@@ -40,13 +47,17 @@ int lerPerguntas(Perguntas *perguntas)
             linha++;
         }
 
-        if (coluna == coluna_pergunta)
+        if (coluna == coluna_dificuldade)
+        {
+            perguntas[linha].nivel = secao[0];
+        }
+        else if (coluna == coluna_pergunta)
         {
             strcpy(perguntas[linha].pergunta, secao);
         }
         else if (coluna >= coluna_alternativa)
         {
-            strcpy(perguntas[linha].respostas[coluna - 2], secao);
+            strcpy(perguntas[linha].respostas[coluna - 3], secao);
         }
     }
 
@@ -54,7 +65,7 @@ int lerPerguntas(Perguntas *perguntas)
     return 0;
 }
 
-int lerRespostas(Perguntas *perguntas)
+int lerRespostas(Perguntas *perguntas, char localizacaoRespostas[255])
 {
     FILE *arquivoRespostas = fopen(localizacaoRespostas, "r");
     int numero;
@@ -96,16 +107,16 @@ int pegarTotalPerguntas(char localizacao1[], char localizacao2[])
     return linhas[0];
 }
 
-void carregarArquivos(Perguntas *perguntas)
+void carregarArquivos(Perguntas *perguntas, char localizacaoPerguntas[255], char localizacaoRespostas[255])
 {
     printf("\nCarregando arquivos... por favor aguarde!");
 
-    if (lerPerguntas(perguntas) == 1)
+    if (lerPerguntas(perguntas, localizacaoPerguntas) == 1)
     {
         printf("\nErro na leitura do(s) arquivo(s)");
         sair(1);
     }
-    if (lerRespostas(perguntas) == 1)
+    if (lerRespostas(perguntas, localizacaoRespostas) == 1)
     {
         printf("\nErro na leitura do(s) arquivo(s)");
         sair(1);
@@ -113,7 +124,7 @@ void carregarArquivos(Perguntas *perguntas)
     printf(" Concluido com sucesso!");
 }
 
-void verificarExistencia()
+void verificarExistencia(char localizacaoPerguntas[255], char localizacaoRespostas[255])
 {
     printf("\nProcurando arquivos... ");
     char *localizacao[2];
@@ -125,7 +136,7 @@ void verificarExistencia()
         if (file == NULL)
         {
             printf("\n\nErro ao abrir o arquivo: %s", localizacao[i]);
-            perror(strcat("\nErro no arquivo ", strcat(localizacao[i], "'")));
+            // perror(strcat("\nErro no arquivo ", strcat(localizacao[i], "'")));
             sair(1);
         }
         fclose(file);
@@ -207,11 +218,13 @@ void imprimirResultado(int totalPerguntas, int acertos)
 
 int main(void)
 {
-    verificarExistencia();
+    char localizacaoPerguntas[255] = "perguntas.txt";
+    char localizacaoRespostas[255] = "gabarito.txt";
+    verificarExistencia(localizacaoPerguntas, localizacaoRespostas);
     int totalPerguntas = pegarTotalPerguntas(localizacaoPerguntas, localizacaoRespostas);
     Perguntas *perguntas = (Perguntas *)malloc(sizeof(Perguntas) * totalPerguntas);
     
-    carregarArquivos(perguntas);
+    carregarArquivos(perguntas, localizacaoPerguntas, localizacaoRespostas);
     int acertos = executarPerguntas(perguntas, totalPerguntas);
     imprimirResultado(totalPerguntas, acertos);
     system("pause");
