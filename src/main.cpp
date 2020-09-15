@@ -30,11 +30,21 @@ struct Resumo{
     int total = 0;
 };
 
+void clear() {
+#if defined _WIN32
+    system("cls");
+#elif defined (__LINUX__) || defined(__gnu_linux__) || defined(__linux__)
+    system("clear");
+#elif defined (__APPLE__)
+    system("clear");
+#endif
+}
+
 #pragma region Leitura
 
 void sair(int i)
 {
-    system("pause");
+    std::cin.get();
     exit(i);
 }
 
@@ -174,8 +184,8 @@ void verificarExistencia(char localizacaoPerguntas[255], char localizacaoRespost
 #pragma region ExecutarPerguntas
 struct Resumo executarPerguntas(struct Perguntas *perguntas, int total, int nivel)
 {
-
-    system("cls");
+    int acertos = 0;
+    clear();
     struct Resumo resumo;
 
     for (int atual = 1; atual <= total; atual++)
