@@ -2,28 +2,32 @@
 #include <string.h>
 #include <stdio.h>
 
+enum Nivel{
+    todos = 0,
+    facil = 1,
+    medio = 2,
+    dificil = 3
+};
 
-
-// Facil = '1',
-// Medio = '2',
-// Dificil = '3'
-// Todos = '0'
-
+enum Tabela
+{
+    coluna_id = 0,
+    coluna_dificuldade = 1,
+    coluna_pergunta = 2,
+    coluna_alternativa = 3
+};
 
 struct Perguntas
 {
     char pergunta[255];
     char respostas[5][255];
     char respostaCerta[3];
-    char nivel;
+    Nivel nivel;
 };
 
-enum tabela
-{
-    coluna_id = 0,
-    coluna_dificuldade = 1,
-    coluna_pergunta = 2,
-    coluna_alternativa = 3
+struct Resumo{
+    int acertos = 0;
+    int total = 0;
 };
 
 #pragma region Leitura
@@ -46,10 +50,11 @@ int lerPerguntas(Perguntas *perguntas, char localizacaoPerguntas[255])
             coluna = 0;
             linha++;
         }
-
         if (coluna == coluna_dificuldade)
         {
-            perguntas[linha].nivel = secao[0];
+            int nivel;
+            sscanf(secao, "%d", &nivel);
+            perguntas[linha].nivel = static_cast<Nivel>(nivel);
         }
         else if (coluna == coluna_pergunta)
         {
@@ -124,6 +129,26 @@ void carregarArquivos(Perguntas *perguntas, char localizacaoPerguntas[255], char
     printf(" Concluido com sucesso!");
 }
 
+int verificarNivel()
+{
+    bool respostaValida = false;
+    int nivel = 0;
+    while (respostaValida == false)
+    {
+        printf("\nEscolha o nivel de dificuldade, Digite '0' para Todos, '1' para Facil, '2' para Medio e '3' para Dificil\n");
+        scanf("%d", &nivel);
+        if (nivel < 0 && nivel > 3)
+        {
+            printf("\nERRO! Dificuldade invalida, escolha um numero entre (1, 2 ou 3)");
+        }
+        else
+        {
+            respostaValida = true;
+        }
+    }
+    return nivel;
+}
+
 void verificarExistencia(char localizacaoPerguntas[255], char localizacaoRespostas[255])
 {
     printf("\nProcurando arquivos... ");
@@ -147,72 +172,77 @@ void verificarExistencia(char localizacaoPerguntas[255], char localizacaoRespost
 #pragma endregion Leitura
 
 #pragma region ExecutarPerguntas
-int executarPerguntas(struct Perguntas *perguntas, int total)
+struct Resumo executarPerguntas(struct Perguntas *perguntas, int total, int nivel)
 {
-    int acertos = 0;
+
     system("cls");
+    struct Resumo resumo;
 
     for (int atual = 1; atual <= total; atual++)
     {
-        printf("\nPergunta n. %d: ", atual);
-        int atualP = atual - 1;
-
-        printf("\n%s", perguntas[atualP].pergunta);
-        int i = 0;
-        for (char abcde = 'a'; abcde <= 'e'; ++abcde)
+        if (perguntas[atual-1].nivel == nivel || nivel == todos)
         {
-            if (strcmp(perguntas[atualP].respostas[i], "") != 0)
+            resumo.total = resumo.total + 1;
+            printf("\nPergunta n. %d: ", resumo.total);
+            int atualP = atual - 1;
+
+            printf("\n%s", perguntas[atualP].pergunta);
+            int i = 0;
+            for (char abcde = 'a'; abcde <= 'e'; ++abcde)
             {
-                printf("\n\t%c) %s", toupper(abcde), perguntas[atualP].respostas[i]);
+                if (strcmp(perguntas[atualP].respostas[i], "") != 0)
+                {
+                    printf("\n\t%c) %s", toupper(abcde), perguntas[atualP].respostas[i]);
+                }
+                i++;
             }
-            i++;
-        }
 
-        bool respostaValida = false;
+            bool respostaValida = false;
 
-        char resposta[3];
-        while (respostaValida == false)
-        {
-            printf("\nSua resposta: ");
-            scanf("%s", resposta);
-
-            *resposta = toupper(*resposta);
-
-            if ((strcmp(resposta, "A") != 0) &&
-                (strcmp(resposta, "B") != 0) &&
-                (strcmp(resposta, "C") != 0) &&
-                (strcmp(resposta, "D") != 0) &&
-                (strcmp(resposta, "E") != 0))
+            char resposta[3];
+            while (respostaValida == false)
             {
-                printf("\nERRO! Alternativa invalida");
+                printf("\nSua resposta: ");
+                scanf("%s", resposta);
+
+                *resposta = toupper(*resposta);
+
+                if ((strcmp(resposta, "A") != 0) &&
+                    (strcmp(resposta, "B") != 0) &&
+                    (strcmp(resposta, "C") != 0) &&
+                    (strcmp(resposta, "D") != 0) &&
+                    (strcmp(resposta, "E") != 0))
+                {
+                    printf("\nERRO! Alternativa invalida");
+                }
+                else
+                {
+                    respostaValida = true;
+                }
+            }
+
+            if (strcmp(resposta, perguntas[atualP].respostaCerta) == 0)
+            {
+                printf("\nParabens! Voce acertou!\n");
+                resumo.acertos++;
             }
             else
             {
-                respostaValida = true;
+                printf("\nQue pena! Voce errou... a resposta certa era a alternativa %s\n", perguntas[atualP].respostaCerta);
             }
-        }
-
-        if (strcmp(resposta, perguntas[atualP].respostaCerta) == 0)
-        {
-            printf("\nParabens! Voce acertou!\n");
-            acertos++;
-        }
-        else
-        {
-            printf("\nQue pena! Voce errou... a resposta certa era a alternativa %s\n", perguntas[atualP].respostaCerta);
         }
     }
 
-    return acertos;
+    return resumo;
 }
 
-void imprimirResultado(int totalPerguntas, int acertos)
+void imprimirResultado(struct Resumo resumo)
 {
     printf("\nObrigado por participar do nosso programa!");
-    printf("\nTotal de perguntas: %d", totalPerguntas);
-    printf("\nTotal de acertos: %d", acertos);
-    printf("\nTotal de erros: %d", totalPerguntas - acertos);
-    printf("\nVoce acertou %.2f%%\n\n", (float(acertos) / float(totalPerguntas)) * 100);
+    printf("\nTotal de perguntas: %d", resumo.total);
+    printf("\nTotal de acertos: %d", resumo.acertos);
+    printf("\nTotal de erros: %d", resumo.total - resumo.acertos);
+    printf("\nVoce acertou %.2f%%\n\n", (float(resumo.acertos) / float(resumo.total)) * 100);
 }
 #pragma endregion ExecutarPerguntas
 
@@ -223,10 +253,10 @@ int main(void)
     verificarExistencia(localizacaoPerguntas, localizacaoRespostas);
     int totalPerguntas = pegarTotalPerguntas(localizacaoPerguntas, localizacaoRespostas);
     Perguntas *perguntas = (Perguntas *)malloc(sizeof(Perguntas) * totalPerguntas);
-    
     carregarArquivos(perguntas, localizacaoPerguntas, localizacaoRespostas);
-    int acertos = executarPerguntas(perguntas, totalPerguntas);
-    imprimirResultado(totalPerguntas, acertos);
+    int nivel = verificarNivel();
+    struct Resumo resumo = executarPerguntas(perguntas, totalPerguntas, nivel);
+    imprimirResultado(resumo);
     system("pause");
     return 0;
 }
