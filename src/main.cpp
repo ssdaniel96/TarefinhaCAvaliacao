@@ -246,13 +246,33 @@ struct Resumo executarPerguntas(struct Perguntas *perguntas, int total, int nive
     return resumo;
 }
 
+void exibirImagem(char localizacaoImagem[255]){
+    FILE *imagem = fopen(localizacaoImagem, "r");
+    
+        if (imagem != NULL)
+        {
+            char linha[100];
+            while (fscanf(imagem, "%[^\n]%*c", linha) != EOF)
+            {
+                printf("%s\n", &linha);
+            }
+        }
+}
+
 void imprimirResultado(struct Resumo resumo)
 {
+    float percentual = (float(resumo.acertos) / float(resumo.total)) * 100;
+    if(percentual >= 50){
+        exibirImagem("img/trofeu.txt");
+    }else{
+        exibirImagem("img/gamover.txt");
+    }
+
     printf("\nObrigado por participar do nosso programa!");
     printf("\nTotal de perguntas: %d", resumo.total);
     printf("\nTotal de acertos: %d", resumo.acertos);
     printf("\nTotal de erros: %d", resumo.total - resumo.acertos);
-    printf("\nVoce acertou %.2f%%\n\n", (float(resumo.acertos) / float(resumo.total)) * 100);
+    printf("\nVoce acertou %.2f%%\n\n", percentual);
 }
 #pragma endregion ExecutarPerguntas
 
