@@ -2,7 +2,13 @@
 #include <string.h>
 #include <stdio.h>
 
-enum Nivel{
+const char correct[] = "correct";
+const char wrong[] = "wrong";
+const char youWin[] = "win";
+const char youLose[] = "lose";
+
+enum Nivel
+{
     todos = 0,
     facil = 1,
     medio = 2,
@@ -25,17 +31,19 @@ struct Perguntas
     Nivel nivel;
 };
 
-struct Resumo{
+struct Resumo
+{
     int acertos = 0;
     int total = 0;
 };
 
-void clear() {
+void clear()
+{
 #if defined _WIN32
     system("cls");
-#elif defined (__LINUX__) || defined(__gnu_linux__) || defined(__linux__)
+#elif defined(__LINUX__) || defined(__gnu_linux__) || defined(__linux__)
     system("clear");
-#elif defined (__APPLE__)
+#elif defined(__APPLE__)
     system("clear");
 #endif
 }
@@ -110,6 +118,7 @@ int pegarTotalPerguntas(char localizacao1[], char localizacao2[])
         {
             linhas[i] = linha;
         }
+        fclose(arquivo);
     }
 
     if (linhas[0] != linhas[1])
@@ -171,12 +180,20 @@ void verificarExistencia(char localizacaoPerguntas[255], char localizacaoRespost
         if (file == NULL)
         {
             printf("\n\nErro ao abrir o arquivo: %s", localizacao[i]);
-            // perror(strcat("\nErro no arquivo ", strcat(localizacao[i], "'")));
+            perror(strcat("\nErro no arquivo ", strcat(localizacao[i], "'")));
             sair(1);
         }
         fclose(file);
     }
     printf(" Encontrados!");
+}
+
+void tocarMusica(char nome[])
+{
+    char cmd[] = "start effects/";
+    strcat(cmd, nome);
+    strcat(cmd, ".mp3");
+    system(cmd);
 }
 
 #pragma endregion Leitura
@@ -190,7 +207,7 @@ struct Resumo executarPerguntas(struct Perguntas *perguntas, int total, int nive
 
     for (int atual = 1; atual <= total; atual++)
     {
-        if (perguntas[atual-1].nivel == nivel || nivel == todos)
+        if (perguntas[atual - 1].nivel == nivel || nivel == todos)
         {
             resumo.total = resumo.total + 1;
             printf("\nPergunta n. %d: ", resumo.total);
@@ -234,38 +251,49 @@ struct Resumo executarPerguntas(struct Perguntas *perguntas, int total, int nive
             if (strcmp(resposta, perguntas[atualP].respostaCerta) == 0)
             {
                 printf("\nParabens! Voce acertou!\n");
+                tocarMusica((char *)correct);
                 resumo.acertos++;
             }
             else
             {
                 printf("\nQue pena! Voce errou... a resposta certa era a alternativa %s\n", perguntas[atualP].respostaCerta);
+                tocarMusica((char *)wrong);
             }
+            system("pause");
+            clear();
         }
     }
 
     return resumo;
 }
 
-void exibirImagem(char localizacaoImagem[255]){
+void exibirImagem(char localizacaoImagem[255])
+{
     FILE *imagem = fopen(localizacaoImagem, "r");
-    
-        if (imagem != NULL)
+
+    if (imagem != NULL)
+    {
+        char linha[100];
+        while (fscanf(imagem, "%[^\n]%*c", linha) != EOF)
         {
-            char linha[100];
-            while (fscanf(imagem, "%[^\n]%*c", linha) != EOF)
-            {
-                printf("%s\n", &linha);
-            }
+            printf("%s\n", &linha);
         }
+    }
+    fclose(imagem);
 }
 
 void imprimirResultado(struct Resumo resumo)
 {
     float percentual = (float(resumo.acertos) / float(resumo.total)) * 100;
-    if(percentual >= 50){
+    if (percentual >= 50)
+    {
         exibirImagem("img/trofeu.txt");
-    }else{
+        tocarMusica((char *)youWin);
+    }
+    else
+    {
         exibirImagem("img/gamover.txt");
+        tocarMusica((char *)youLose);
     }
 
     printf("\nObrigado por participar do nosso programa!");
@@ -276,8 +304,16 @@ void imprimirResultado(struct Resumo resumo)
 }
 #pragma endregion ExecutarPerguntas
 
+void iniciarMediaPlayer()
+{
+    std::cout << "Iniciando media player...";
+    system("start wmplayer.exe");
+    std::cout << "Concluido!!\n";
+};
+
 int main(void)
 {
+    iniciarMediaPlayer();
     char localizacaoPerguntas[255] = "perguntas.txt";
     char localizacaoRespostas[255] = "gabarito.txt";
     verificarExistencia(localizacaoPerguntas, localizacaoRespostas);
