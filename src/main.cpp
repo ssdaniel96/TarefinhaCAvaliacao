@@ -1,11 +1,34 @@
 #include <iostream>
 #include <string.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <windows.h>
+#include <time.h>
 
 const char correct[] = "correct";
 const char wrong[] = "wrong";
 const char youWin[] = "win";
 const char youLose[] = "lose";
+
+enum Color
+{
+    Black = 0,
+    Blue = 1,
+    Green = 2,	
+    Aqua = 3,
+    Red = 4,
+    Purple = 5,
+    Yellow = 6,
+    White = 7,
+    Gray = 8,
+    LightBlue = 9,
+    LightGreen = 10,
+    LightAqua = 11,
+    LightRed = 12,
+    LightPurple = 13,
+    LightYellow = 14,
+    BrightWhite = 15,
+};
 
 enum Nivel
 {
@@ -23,19 +46,20 @@ enum Tabela
     coluna_alternativa = 3
 };
 
-struct Perguntas
+typedef struct Perguntas
 {
     char pergunta[255];
     char respostas[5][255];
     char respostaCerta[3];
     Nivel nivel;
-};
+} Pergunta;
 
-struct Resumo
-{
+typedef struct _Resumo{
     int acertos = 0;
     int total = 0;
-};
+} Resumo;
+
+using namespace std;
 
 void clear()
 {
@@ -48,11 +72,23 @@ void clear()
 #endif
 }
 
+void SetColor(int ForgC)
+{
+    WORD wColor;
+    HANDLE hStdOut = GetStdHandle((DWORD)-11);
+    CONSOLE_SCREEN_BUFFER_INFO csbi;
+    if(GetConsoleScreenBufferInfo(hStdOut, &csbi)){
+        wColor = (csbi.wAttributes & 0xF0) + (ForgC & 0x0F);
+        SetConsoleTextAttribute(hStdOut, wColor);
+    }
+    return;
+ }
+
 #pragma region Leitura
 
 void sair(int i)
 {
-    std::cin.get();
+    cin.get();
     exit(i);
 }
 
@@ -60,10 +96,11 @@ int lerPerguntas(Perguntas *perguntas, char localizacaoPerguntas[255])
 {
     char secao[255];
     FILE *arquivoPerguntas = fopen(localizacaoPerguntas, "r");
+    if (arquivoPerguntas == NULL) return 1;
 
     for (int linha = 0, coluna = 0; fscanf(arquivoPerguntas, "%[^;]%*c", secao) != EOF; coluna++)
     {
-        if (secao[0] == 10) // "\n" igual a 10 tabela ascii
+        if (secao[0] == 10) // 10 = \n (ascii)
         {
             coluna = 0;
             linha++;
@@ -91,6 +128,7 @@ int lerPerguntas(Perguntas *perguntas, char localizacaoPerguntas[255])
 int lerRespostas(Perguntas *perguntas, char localizacaoRespostas[255])
 {
     FILE *arquivoRespostas = fopen(localizacaoRespostas, "r");
+    if (arquivoRespostas == NULL) return 1;
     int numero;
     char resposta[3];
 
@@ -105,6 +143,7 @@ int lerRespostas(Perguntas *perguntas, char localizacaoRespostas[255])
 
 int pegarTotalPerguntas(char localizacao1[], char localizacao2[])
 {
+    SetColor(Color::White);
     printf("\nVerificando arquivos...Por favor aguarde!");
     int linhas[2];
     char *localizacao[2];
@@ -123,9 +162,12 @@ int pegarTotalPerguntas(char localizacao1[], char localizacao2[])
 
     if (linhas[0] != linhas[1])
     {
+        SetColor(Color::Red);
         printf("\nERRO! Os arquivos %s e %s contem numeros de linhas diferentes! %d e %d", localizacao1, localizacao2, linhas[0], linhas[1]);
+        SetColor(Color::White);
         sair(1);
     }
+    SetColor(Color::Green);
     printf(" Concluido com sucesso!");
 
     return linhas[0];
@@ -133,32 +175,56 @@ int pegarTotalPerguntas(char localizacao1[], char localizacao2[])
 
 void carregarArquivos(Perguntas *perguntas, char localizacaoPerguntas[255], char localizacaoRespostas[255])
 {
+    SetColor(Color::White);
     printf("\nCarregando arquivos... por favor aguarde!");
 
     if (lerPerguntas(perguntas, localizacaoPerguntas) == 1)
     {
+        SetColor(Color::Red);
         printf("\nErro na leitura do(s) arquivo(s)");
+        SetColor(Color::White);
         sair(1);
     }
     if (lerRespostas(perguntas, localizacaoRespostas) == 1)
     {
+        SetColor(Color::Red);
         printf("\nErro na leitura do(s) arquivo(s)");
+        SetColor(Color::White);
         sair(1);
     }
-    printf(" Concluido com sucesso!");
+    SetColor(Color::Green);
+    printf(" Concluido com sucesso!\n");
 }
 
 int verificarNivel()
 {
     bool respostaValida = false;
     int nivel = 0;
+    
+    Color cor1 = Color::Gray;
+    Color cor2 = Color::White;
+
+    clear();
+
+    SetColor(cor1);
+    printf ("\n*-----------------------------*");
+    printf ("\n|    "); SetColor(Color::BrightWhite); printf("NIVEIS DE DIFICULDADE"); SetColor(cor1); printf("    |");
+    printf ("\n*-----------------------------*");
+    printf ("\n|  "); SetColor(cor2); printf ("0"); SetColor(cor1); printf (" - "); SetColor(Color::Blue);   printf("TODOS                  "); SetColor(cor1);printf("|");
+    printf ("\n|  "); SetColor(cor2); printf ("1"); SetColor(cor1); printf (" - "); SetColor(cor2); printf("NIVEL "); SetColor(Color::Green);  printf("FACIL            "); SetColor(cor1);printf("|");
+    printf ("\n|  "); SetColor(cor2); printf ("2"); SetColor(cor1); printf (" - "); SetColor(cor2); printf("NIVEL "); SetColor(Color::Yellow); printf("MEDIO            "); SetColor(cor1);printf("|");
+    printf ("\n|  "); SetColor(cor2); printf ("3"); SetColor(cor1); printf (" - "); SetColor(cor2); printf("NIVEL "); SetColor(Color::Red);    printf("DIFICIL          "); SetColor(cor1);printf("|");
+    printf ("\n*-----------------------------*");
+
     while (respostaValida == false)
     {
-        printf("\nEscolha o nivel de dificuldade, Digite '0' para Todos, '1' para Facil, '2' para Medio e '3' para Dificil\n");
+        SetColor(cor2);
+	    printf ("\n\nEscolha um nivel -> ");
         scanf("%d", &nivel);
-        if (nivel < 0 && nivel > 3)
+        if (nivel < 0 || nivel > 3)
         {
-            printf("\nERRO! Dificuldade invalida, escolha um numero entre (1, 2 ou 3)");
+            SetColor(Color::Red);
+            printf("\nERRO! "); SetColor(Color::LightYellow); printf("Dificuldade invalida, escolha um numero entre (0, 1, 2 ou 3).");
         }
         else
         {
@@ -180,7 +246,6 @@ void verificarExistencia(char localizacaoPerguntas[255], char localizacaoRespost
         if (file == NULL)
         {
             printf("\n\nErro ao abrir o arquivo: %s", localizacao[i]);
-            perror(strcat("\nErro no arquivo ", strcat(localizacao[i], "'")));
             sair(1);
         }
         fclose(file);
@@ -193,33 +258,47 @@ void tocarMusica(char nome[])
     char cmd[] = "start effects/";
     strcat(cmd, nome);
     strcat(cmd, ".mp3");
-    system(cmd);
+    printf("%s", cmd);
+    //system(cmd);
 }
 
 #pragma endregion Leitura
 
+void efeitoDigitar(char *texto){
+    for (int i = 0; i < strlen(texto); i++){
+        printf("%c", texto[i]); Sleep(50);
+    }
+}
+
 #pragma region ExecutarPerguntas
-struct Resumo executarPerguntas(struct Perguntas *perguntas, int total, int nivel)
+Resumo executarPerguntas(Pergunta *perguntas, int total, int nivel)
 {
     int acertos = 0;
     clear();
-    struct Resumo resumo;
+    SetColor(Color::LightGreen);
+    printf("\n\t\tBOA PROVA\n\n");
+    Sleep(1000);
+    clear();
+
+    Resumo resumo;
 
     for (int atual = 1; atual <= total; atual++)
     {
-        if (perguntas[atual - 1].nivel == nivel || nivel == todos)
+        if (perguntas[atual-1].nivel == nivel || nivel == todos)
         {
             resumo.total = resumo.total + 1;
+            SetColor(Color::White);
             printf("\nPergunta n. %d: ", resumo.total);
             int atualP = atual - 1;
-
-            printf("\n%s", perguntas[atualP].pergunta);
+            SetColor(Color::Yellow);
+            efeitoDigitar(perguntas[atualP].pergunta);
+            SetColor(Color::White);
             int i = 0;
-            for (char abcde = 'a'; abcde <= 'e'; ++abcde)
+            for (char abcde = 'A'; abcde <= 'E'; ++abcde)
             {
-                if (strcmp(perguntas[atualP].respostas[i], "") != 0)
+                if (strlen(perguntas[atualP].respostas[i]) > 0)
                 {
-                    printf("\n\t%c) %s", toupper(abcde), perguntas[atualP].respostas[i]);
+                    printf("\n\t%c) %s", abcde, perguntas[atualP].respostas[i]);
                 }
                 i++;
             }
@@ -229,6 +308,7 @@ struct Resumo executarPerguntas(struct Perguntas *perguntas, int total, int nive
             char resposta[3];
             while (respostaValida == false)
             {
+                SetColor(Color::White);
                 printf("\nSua resposta: ");
                 scanf("%s", resposta);
 
@@ -240,7 +320,8 @@ struct Resumo executarPerguntas(struct Perguntas *perguntas, int total, int nive
                     (strcmp(resposta, "D") != 0) &&
                     (strcmp(resposta, "E") != 0))
                 {
-                    printf("\nERRO! Alternativa invalida");
+                    SetColor(Color::Red);
+                    printf("\nERRO!");SetColor(Color::Yellow); printf(" Alternativa invalida");
                 }
                 else
                 {
@@ -250,25 +331,34 @@ struct Resumo executarPerguntas(struct Perguntas *perguntas, int total, int nive
 
             if (strcmp(resposta, perguntas[atualP].respostaCerta) == 0)
             {
+                SetColor(Color::Green);
                 printf("\nParabens! Voce acertou!\n");
-                tocarMusica((char *)correct);
+                system("start effects/correct.mp3");
+                //tocarMusica((char *)correct);
                 resumo.acertos++;
+
             }
             else
             {
+                SetColor(Color::Red);
                 printf("\nQue pena! Voce errou... a resposta certa era a alternativa %s\n", perguntas[atualP].respostaCerta);
-                tocarMusica((char *)wrong);
+                system("start effects/wrong.mp3");
+                //tocarMusica((char *)wrong);
+                
             }
+            SetColor(Color::White);
+            Sleep(1000);
             system("pause");
             clear();
         }
+        
     }
-
     return resumo;
 }
 
 void exibirImagem(char localizacaoImagem[255])
 {
+
     FILE *imagem = fopen(localizacaoImagem, "r");
 
     if (imagem != NULL)
@@ -282,46 +372,53 @@ void exibirImagem(char localizacaoImagem[255])
     fclose(imagem);
 }
 
-void imprimirResultado(struct Resumo resumo)
+void imprimirResultado(Resumo resumo)
 {
+    char imagem[25];
     float percentual = (float(resumo.acertos) / float(resumo.total)) * 100;
-    if (percentual >= 50)
-    {
-        exibirImagem("img/trofeu.txt");
-        tocarMusica((char *)youWin);
+    if(percentual >= 50){
+        SetColor(Color::Yellow);
+        exibirImagem((char *)"img/trofeu.txt");
+        system("start effects/win.mp3");
+        //tocarMusica((char *)youWin);
     }
     else
     {
-        exibirImagem("img/gamover.txt");
-        tocarMusica((char *)youLose);
+        SetColor(Color::Gray);
+        exibirImagem((char *)"img/gamover.txt");
+        system("start effects/lose.mp3");
+        //tocarMusica((char *)youLose);
     }
 
+    SetColor(Color::White);
     printf("\nObrigado por participar do nosso programa!");
     printf("\nTotal de perguntas: %d", resumo.total);
     printf("\nTotal de acertos: %d", resumo.acertos);
     printf("\nTotal de erros: %d", resumo.total - resumo.acertos);
     printf("\nVoce acertou %.2f%%\n\n", percentual);
 }
+
+
 #pragma endregion ExecutarPerguntas
 
 void iniciarMediaPlayer()
 {
-    std::cout << "Iniciando media player...";
+    printf("Iniciando media player...");
     system("start wmplayer.exe");
-    std::cout << "Concluido!!\n";
-};
+    printf("Concluido!!\n");
+}
 
 int main(void)
 {
-    iniciarMediaPlayer();
+    // iniciarMediaPlayer();
     char localizacaoPerguntas[255] = "perguntas.txt";
     char localizacaoRespostas[255] = "gabarito.txt";
     verificarExistencia(localizacaoPerguntas, localizacaoRespostas);
     int totalPerguntas = pegarTotalPerguntas(localizacaoPerguntas, localizacaoRespostas);
-    Perguntas *perguntas = (Perguntas *)malloc(sizeof(Perguntas) * totalPerguntas);
+    Pergunta *perguntas = (Pergunta *)malloc(sizeof(Pergunta) * totalPerguntas);
     carregarArquivos(perguntas, localizacaoPerguntas, localizacaoRespostas);
     int nivel = verificarNivel();
-    struct Resumo resumo = executarPerguntas(perguntas, totalPerguntas, nivel);
+    Resumo resumo = executarPerguntas(perguntas, totalPerguntas, nivel);
     imprimirResultado(resumo);
     system("pause");
     return 0;
